@@ -4,34 +4,44 @@ import (
 	"errors"
 	"strconv"
 	"strings"
+	"unicode"
 )
 
 var ErrInvalidString = errors.New("invalid string")
 
 func Unpack(str string) (string, error) {
 	var result strings.Builder
-	var prev rune
-	for _, r := range str {
-		repeat, err := strconv.Atoi(string(r))
-		if err == nil {
-			if prev == 0 {
-				return "", ErrInvalidString
-			}
-			if repeat == 0 {
-				prevString := strings.TrimSuffix(result.String(), string(prev))
-				result.Reset()
-				result.WriteString(prevString)
 
-				continue
+	var toPrint rune
+	isEscaped := false
+	for _, currentRune := range str {
+		if isEscaped || (currentRune != '\\' && !unicode.IsDigit(currentRune)) {
+			if toPrint != 0 {
+				result.WriteRune(toPrint)
 			}
+			toPrint = currentRune
+			isEscaped = false
 
-			result.WriteString(strings.Repeat(string(prev), repeat-1))
-			prev = 0
 			continue
 		}
 
-		result.WriteRune(r)
-		prev = r
+		if currentRune == '\\' {
+			isEscaped = true
+			continue
+		}
+
+		toRepeat, err := strconv.Atoi(string(currentRune))
+		if err != nil || toPrint == 0 {
+			return "", ErrInvalidString
+		}
+
+		result.WriteString(strings.Repeat(string(toPrint), toRepeat))
+		toPrint = 0
+		isEscaped = false
+	}
+
+	if toPrint != 0 {
+		result.WriteRune(toPrint)
 	}
 
 	return result.String(), nil
