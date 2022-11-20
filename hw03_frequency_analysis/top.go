@@ -13,19 +13,14 @@ type wordCount struct {
 func Top10(text string) []string {
 	words := strings.Fields(text)
 
-	wordsCounts := make([]wordCount, 0, len(words))
+	wordsMap := make(map[string]int, len(words))
 	for _, word := range words {
-		found := false
-		for i, w := range wordsCounts {
-			if w.word == word {
-				wordsCounts[i].count++
-				found = true
-				break
-			}
-		}
-		if !found {
-			wordsCounts = append(wordsCounts, wordCount{word: word, count: 1})
-		}
+		wordsMap[word]++
+	}
+
+	wordsCounts := make([]wordCount, 0, len(wordsMap))
+	for word, count := range wordsMap {
+		wordsCounts = append(wordsCounts, wordCount{word: word, count: count})
 	}
 
 	sort.Slice(wordsCounts, func(i, j int) bool {
