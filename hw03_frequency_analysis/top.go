@@ -10,11 +10,21 @@ type wordCount struct {
 	count int
 }
 
+const (
+	dash        = "-"
+	punctuation = ".,!?:;"
+)
+
 func Top10(text string) []string {
 	words := strings.Fields(text)
 
 	wordsMap := make(map[string]int, len(words))
 	for _, word := range words {
+		word = strings.Trim(word, punctuation)
+		if word == dash {
+			continue
+		}
+		word = strings.ToLower(word)
 		wordsMap[word]++
 	}
 
