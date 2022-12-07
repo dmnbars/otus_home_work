@@ -35,8 +35,8 @@ func (l *lruCache) Set(key Key, value interface{}) bool {
 	defer l.mu.Unlock()
 
 	if item, ok := l.items[key]; ok {
-		l.queue.Remove(item)
-		l.items[key] = l.queue.PushFront(cacheItem{key: key, value: value})
+		item.Value = cacheItem{key: key, value: value}
+		l.queue.MoveToFront(item)
 
 		return true
 	}

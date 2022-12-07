@@ -36,17 +36,7 @@ func (l *list) Back() *ListItem {
 
 func (l *list) PushFront(v interface{}) *ListItem {
 	current := &ListItem{Value: v}
-	l.count++
-	if l.front != nil {
-		current.Next = l.front
-		current.Next.Prev = current
-		l.front = current
-
-		return current
-	}
-
-	l.front = current
-	l.back = current
+	l.pushFront(current)
 
 	return current
 }
@@ -104,7 +94,21 @@ func (l *list) Remove(i *ListItem) {
 
 func (l *list) MoveToFront(i *ListItem) {
 	l.Remove(i)
-	l.PushFront(i.Value)
+	l.pushFront(i)
+}
+
+func (l *list) pushFront(i *ListItem) {
+	l.count++
+	if l.front != nil {
+		i.Next = l.front
+		i.Next.Prev = i
+		l.front = i
+
+		return
+	}
+
+	l.front = i
+	l.back = i
 }
 
 func NewList() List {
