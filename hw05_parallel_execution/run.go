@@ -5,16 +5,26 @@ import (
 	"sync"
 )
 
-var ErrErrorsLimitExceeded = errors.New("errors limit exceeded")
+var (
+	ErrErrorsLimitExceeded       = errors.New("errors limit exceeded")
+	ErrNotPositiveCountOfWorkers = errors.New("count of workers must be positive")
+)
 
 type Task func() error
 
 // Run starts tasks in n goroutines and stops its work when receiving m errors from tasks.
 func Run(tasks []Task, n, m int) error {
-	tasksCh := make(chan Task, 0)
-	errCh := make(chan error, 0)
-	quit := make(chan struct{}, 0)
-	resultCh := make(chan error, 0)
+	if n <= 0 {
+		return ErrNotPositiveCountOfWorkers
+	}
+	if m <= 0 {
+		return ErrErrorsLimitExceeded
+	}
+
+	tasksCh := make(chan Task)
+	errCh := make(chan error)
+	quit := make(chan struct{})
+	resultCh := make(chan error)
 
 	wg := &sync.WaitGroup{}
 	for i := 0; i < n; i++ {
