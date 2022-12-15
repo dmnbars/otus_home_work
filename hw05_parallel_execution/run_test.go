@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"math/rand"
+	"sort"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -68,12 +69,41 @@ func TestRun(t *testing.T) {
 		require.LessOrEqual(t, int64(elapsedTime), int64(sumTime/2), "tasks were run sequentially?")
 	})
 
+	t.Run("test for concurrent without sleeps by sort", func(t *testing.T) {
+		tasksCount := 1000
+		tasks := make([]Task, 0, tasksCount)
+		ch := make(chan int, tasksCount)
+		processed := make([]int, 0, tasksCount)
+
+		var runTasksCount int32
+		for i := 0; i < tasksCount; i++ {
+			i := i
+			tasks = append(tasks, func() error {
+				atomic.AddInt32(&runTasksCount, 1)
+				ch <- i
+				return nil
+			})
+		}
+
+		err := Run(tasks, 5, 1)
+		require.NoError(t, err)
+		require.Equal(t, runTasksCount, int32(tasksCount), "not all tasks were completed")
+
+		for val := range ch {
+			processed = append(processed, val)
+			if len(processed) == tasksCount {
+				break
+			}
+		}
+
+		require.False(t, sort.IsSorted(sort.IntSlice(processed)), "tasks were run sequentially?")
+	})
+
 	t.Run("tasks count less when workers", func(t *testing.T) {
 		tasksCount := 5
 		tasks := make([]Task, 0, tasksCount)
 
 		var runTasksCount int32
-
 		for i := 0; i < tasksCount; i++ {
 			tasks = append(tasks, func() error {
 				time.Sleep(time.Millisecond * time.Duration(rand.Intn(100)))
@@ -82,10 +112,7 @@ func TestRun(t *testing.T) {
 			})
 		}
 
-		workersCount := 10
-		maxErrorsCount := 1
-
-		err := Run(tasks, workersCount, maxErrorsCount)
+		err := Run(tasks, 10, 1)
 		require.NoError(t, err)
 
 		require.Equal(t, runTasksCount, int32(tasksCount), "not all tasks were completed")
