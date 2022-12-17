@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"math/rand"
+	"sort"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -66,5 +67,74 @@ func TestRun(t *testing.T) {
 
 		require.Equal(t, runTasksCount, int32(tasksCount), "not all tasks were completed")
 		require.LessOrEqual(t, int64(elapsedTime), int64(sumTime/2), "tasks were run sequentially?")
+	})
+
+	t.Run("test for concurrent without sleeps by sort", func(t *testing.T) {
+		tasksCount := 1000
+		tasks := make([]Task, 0, tasksCount)
+		ch := make(chan int, tasksCount)
+		processed := make([]int, 0, tasksCount)
+
+		var runTasksCount int32
+		for i := 0; i < tasksCount; i++ {
+			i := i
+			tasks = append(tasks, func() error {
+				atomic.AddInt32(&runTasksCount, 1)
+				ch <- i
+				return nil
+			})
+		}
+
+		err := Run(tasks, 5, 1)
+		require.NoError(t, err)
+		require.Equal(t, runTasksCount, int32(tasksCount), "not all tasks were completed")
+
+		for val := range ch {
+			processed = append(processed, val)
+			if len(processed) == tasksCount {
+				break
+			}
+		}
+
+		require.False(t, sort.IsSorted(sort.IntSlice(processed)), "tasks were run sequentially?")
+	})
+
+	t.Run("tasks count less when workers", func(t *testing.T) {
+		tasksCount := 5
+		tasks := make([]Task, 0, tasksCount)
+
+		var runTasksCount int32
+		for i := 0; i < tasksCount; i++ {
+			tasks = append(tasks, func() error {
+				time.Sleep(time.Millisecond * time.Duration(rand.Intn(100)))
+				atomic.AddInt32(&runTasksCount, 1)
+				return nil
+			})
+		}
+
+		err := Run(tasks, 10, 1)
+		require.NoError(t, err)
+
+		require.Equal(t, runTasksCount, int32(tasksCount), "not all tasks were completed")
+	})
+
+	t.Run("negative count of workers", func(t *testing.T) {
+		err := Run([]Task{}, -1, 5)
+		require.ErrorIs(t, err, ErrNotPositiveCountOfWorkers)
+	})
+
+	t.Run("zero count of workers", func(t *testing.T) {
+		err := Run([]Task{}, 0, 5)
+		require.ErrorIs(t, err, ErrNotPositiveCountOfWorkers)
+	})
+
+	t.Run("negative errors limit", func(t *testing.T) {
+		err := Run([]Task{}, 1, -1)
+		require.ErrorIs(t, err, ErrErrorsLimitExceeded)
+	})
+
+	t.Run("zero errors limit", func(t *testing.T) {
+		err := Run([]Task{}, 1, 0)
+		require.ErrorIs(t, err, ErrErrorsLimitExceeded)
 	})
 }
