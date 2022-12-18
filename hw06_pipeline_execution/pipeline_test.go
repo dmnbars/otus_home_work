@@ -32,7 +32,7 @@ func TestPipeline(t *testing.T) {
 	dummy := g("Dummy", func(v interface{}) interface{} { return v })
 	multiplier := g("Multiplier (* 2)", func(v interface{}) interface{} { return v.(int) * 2 })
 	adder := g("Adder (+ 100)", func(v interface{}) interface{} { return v.(int) + 100 })
-	remainderer := g("Reminder of division by 3", func(v interface{}) interface{} { return v.(int) % 3 })
+	reminderer := g("Reminder of division by 3", func(v interface{}) interface{} { return v.(int) % 3 })
 	stringifier := g("Stringifier", func(v interface{}) interface{} { return strconv.Itoa(v.(int)) })
 
 	stages := []Stage{dummy, multiplier, adder, stringifier}
@@ -92,7 +92,7 @@ func TestPipeline(t *testing.T) {
 			close(in)
 		}()
 
-		stages := []Stage{dummy, multiplier, adder, remainderer, stringifier}
+		stages := []Stage{dummy, multiplier, adder, reminderer, stringifier}
 		result := make([]string, 0, 10)
 		start := time.Now()
 		for s := range ExecutePipeline(in, nil, stages...) {
