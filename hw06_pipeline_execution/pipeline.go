@@ -39,6 +39,10 @@ func ExecutePipeline(in In, done In, stages ...Stage) Out {
 				}
 				result <- v
 			case <-done:
+				go func() {
+					for range out {
+					}
+				}()
 				return
 			}
 		}
