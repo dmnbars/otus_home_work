@@ -29,12 +29,32 @@ func TestPipeline(t *testing.T) {
 		}
 	}
 
-	stages := []Stage{
-		g("Dummy", func(v interface{}) interface{} { return v }),
-		g("Multiplier (* 2)", func(v interface{}) interface{} { return v.(int) * 2 }),
-		g("Adder (+ 100)", func(v interface{}) interface{} { return v.(int) + 100 }),
-		g("Stringifier", func(v interface{}) interface{} { return strconv.Itoa(v.(int)) }),
-	}
+	dummy := g("Dummy", func(v interface{}) interface{} { return v })
+	multiplier := g("Multiplier (* 2)", func(v interface{}) interface{} { return v.(int) * 2 })
+	adder := g("Adder (+ 100)", func(v interface{}) interface{} { return v.(int) + 100 })
+	remainderer := g("Reminder of division by 3", func(v interface{}) interface{} { return v.(int) % 3 })
+	stringifier := g("Stringifier", func(v interface{}) interface{} { return strconv.Itoa(v.(int)) })
+
+	stages := []Stage{dummy, multiplier, adder, stringifier}
+
+	t.Run("simplest case", func(t *testing.T) {
+		in := make(Bi)
+		data := []int{1, 2, 3, 4, 5}
+
+		go func() {
+			for _, v := range data {
+				in <- v
+			}
+			close(in)
+		}()
+
+		result := make([]int, 0, 10)
+		for s := range ExecutePipeline(in, nil, dummy) {
+			result = append(result, s.(int))
+		}
+
+		require.Equal(t, []int{1, 2, 3, 4, 5}, result)
+	})
 
 	t.Run("simple case", func(t *testing.T) {
 		in := make(Bi)
@@ -55,6 +75,32 @@ func TestPipeline(t *testing.T) {
 		elapsed := time.Since(start)
 
 		require.Equal(t, []string{"102", "104", "106", "108", "110"}, result)
+		require.Less(t,
+			int64(elapsed),
+			// ~0.8s for processing 5 values in 4 stages (100ms every) concurrently
+			int64(sleepPerStage)*int64(len(stages)+len(data)-1)+int64(fault))
+	})
+
+	t.Run("simple case with new functions", func(t *testing.T) {
+		in := make(Bi)
+		data := []int{1, 2, 3, 4, 5}
+
+		go func() {
+			for _, v := range data {
+				in <- v
+			}
+			close(in)
+		}()
+
+		stages := []Stage{dummy, multiplier, adder, remainderer, stringifier}
+		result := make([]string, 0, 10)
+		start := time.Now()
+		for s := range ExecutePipeline(in, nil, stages...) {
+			result = append(result, s.(string))
+		}
+		elapsed := time.Since(start)
+
+		require.Equal(t, []string{"0", "2", "1", "0", "2"}, result)
 		require.Less(t,
 			int64(elapsed),
 			// ~0.8s for processing 5 values in 4 stages (100ms every) concurrently
