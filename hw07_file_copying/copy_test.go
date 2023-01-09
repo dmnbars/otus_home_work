@@ -20,7 +20,7 @@ func TestCopy(t *testing.T) {
 
 		assert.ErrorIs(t, err, os.ErrNotExist)
 	})
-	t.Run("destination file already exist", func(t *testing.T) {
+	t.Run("same file", func(t *testing.T) {
 		err := Copy(
 			"testdata/input.txt",
 			"testdata/input.txt",
@@ -28,7 +28,7 @@ func TestCopy(t *testing.T) {
 			0,
 		)
 
-		assert.ErrorIs(t, err, os.ErrExist)
+		assert.ErrorIs(t, err, ErrSameFile)
 	})
 	t.Run("offset exceeds file size", func(t *testing.T) {
 		err := Copy(
@@ -90,7 +90,7 @@ func TestCopy(t *testing.T) {
 
 	for _, tc := range tests {
 		tc := tc
-		t.Run(fmt.Sprintf("copy, offset: %d, limit: %d", tc.offset, tc.limit), func(t *testing.T) {
+		t.Run(fmt.Sprintf("copy,offset:%d,limit:%d", tc.offset, tc.limit), func(t *testing.T) {
 			actualPath := fmt.Sprintf("/tmp/out_offset%d_limit%d.txt", tc.offset, tc.limit)
 			expectedPath := fmt.Sprintf("testdata/out_offset%d_limit%d.txt", tc.offset, tc.limit)
 			defer func() {
