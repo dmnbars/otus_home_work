@@ -37,7 +37,7 @@ func Copy(fromPath, toPath string, offset, limit int64) error {
 		return err
 	}
 
-	destination, err := os.OpenFile(toPath, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0o644)
+	destination, err := os.Create(toPath)
 	if err != nil {
 		return err
 	}
