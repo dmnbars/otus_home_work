@@ -4,6 +4,8 @@ import (
 	"errors"
 	"io"
 	"os"
+
+	"github.com/cheggaaa/pb/v3"
 )
 
 var (
@@ -46,6 +48,26 @@ func Copy(fromPath, toPath string, offset, limit int64) error {
 			panic(err)
 		}
 	}()
+
+	if limit == 0 {
+		limit = sourceStat.Size()
+	}
+	bar := pb.Start64(limit)
+	var step int64 = 1024
+	var copied int64
+	for {
+		if copied >= limit {
+			break
+		}
+		n, err := io.CopyN(destination, source, step)
+		if err != nil && !errors.Is(err, io.EOF) {
+			return err
+		}
+
+		copied += n
+		bar.Add64(n)
+	}
+	bar.Finish()
 
 	if limit == 0 {
 		_, err = io.Copy(destination, source)
