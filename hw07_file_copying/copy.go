@@ -11,6 +11,8 @@ import (
 
 var (
 	ErrSameFile              = errors.New("from and to files are the same")
+	ErrNegativeOffset        = errors.New("offset can not be negative")
+	ErrNegativeLimit         = errors.New("limit can not be negative")
 	ErrUnsupportedFile       = errors.New("unsupported file")
 	ErrOffsetExceedsFileSize = errors.New("offset exceeds file size")
 )
@@ -21,6 +23,13 @@ func Copy(fromPath, toPath string, offset, limit int64) error {
 	if fromPath == toPath {
 		return ErrSameFile
 	}
+	if offset < 0 {
+		return ErrNegativeOffset
+	}
+	if limit < 0 {
+		return ErrNegativeLimit
+	}
+
 	sourceStat, err := os.Stat(fromPath)
 	if err != nil {
 		return err

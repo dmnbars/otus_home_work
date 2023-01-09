@@ -50,6 +50,26 @@ func TestCopy(t *testing.T) {
 
 		assert.ErrorIs(t, err, ErrUnsupportedFile)
 	})
+	t.Run("negative offset", func(t *testing.T) {
+		err := Copy(
+			"testdata/input.txt",
+			"/tmp/output.txt",
+			-1,
+			0,
+		)
+
+		assert.ErrorIs(t, err, ErrNegativeOffset)
+	})
+	t.Run("negative limit", func(t *testing.T) {
+		err := Copy(
+			"testdata/input.txt",
+			"/tmp/output.txt",
+			0,
+			-1,
+		)
+
+		assert.ErrorIs(t, err, ErrNegativeLimit)
+	})
 
 	tests := []struct {
 		input  string
