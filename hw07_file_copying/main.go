@@ -2,6 +2,8 @@ package main
 
 import (
 	"flag"
+	"log"
+	"os"
 )
 
 var (
@@ -25,6 +27,7 @@ func main() {
 
 	err := Copy(from, to, offset, limit)
 	if err != nil {
-		panic(err)
+		log.Printf("error while coping: %s", err)
+		os.Exit(1)
 	}
 }

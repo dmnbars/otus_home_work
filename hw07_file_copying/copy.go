@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"io"
+	"log"
 	"os"
 
 	"github.com/cheggaaa/pb/v3"
@@ -38,7 +39,7 @@ func Copy(fromPath, toPath string, offset, limit int64) error {
 	}
 	defer func() {
 		if err := source.Close(); err != nil {
-			panic(err)
+			log.Printf("closing source file: %s", err)
 		}
 	}()
 	_, err = source.Seek(offset, io.SeekStart)
@@ -52,7 +53,7 @@ func Copy(fromPath, toPath string, offset, limit int64) error {
 	}
 	defer func() {
 		if err := destination.Close(); err != nil {
-			panic(err)
+			log.Printf("closing destination file: %s", err)
 		}
 	}()
 
@@ -83,10 +84,6 @@ func Copy(fromPath, toPath string, offset, limit int64) error {
 			}
 			return err
 		}
-	}
-
-	if err != nil && !errors.Is(err, io.EOF) {
-		return err
 	}
 
 	return nil
