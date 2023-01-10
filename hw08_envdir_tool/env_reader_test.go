@@ -18,6 +18,26 @@ func TestReadDir(t *testing.T) {
 	t.Run("empty dir", func(t *testing.T) {
 		dirPath := createDir(t)
 
+		file, err := os.Create(dirPath + "/BADENV=E")
+		require.NoError(t, err)
+
+		_, err = file.WriteString("hello")
+		require.NoError(t, err)
+		require.NoError(t, file.Close())
+
+		defer func() {
+			require.NoError(t, os.Remove(dirPath+"/BADENV=E"))
+			require.NoError(t, os.Remove(dirPath))
+		}()
+
+		envs, err := ReadDir(dirPath)
+		assert.NoError(t, err)
+		assert.Equal(t, Environment{}, envs)
+	})
+
+	t.Run("file with = in name", func(t *testing.T) {
+		dirPath := createDir(t)
+
 		envs, err := ReadDir(dirPath)
 		assert.NoError(t, err)
 		assert.Equal(t, Environment{}, envs)

@@ -35,6 +35,10 @@ func ReadDir(dir string) (Environment, error) {
 			return nil, err
 		}
 
+		if strings.Contains(info.Name(), "=") {
+			continue
+		}
+
 		if info.Size() == 0 {
 			envs[entry.Name()] = EnvValue{
 				Value:      "",
