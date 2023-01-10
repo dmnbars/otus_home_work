@@ -35,7 +35,8 @@ func RunCmd(cmd []string, env Environment) (returnCode int) {
 
 func prepareEnv(env Environment) []string {
 	envsCount := len(env)
-	result := make([]string, 0, envsCount)
+	existsEvsCount := len(os.Environ())
+	result := make([]string, 0, existsEvsCount+envsCount)
 	used := make(map[string]struct{}, envsCount)
 
 	for _, existsEnv := range os.Environ() {
